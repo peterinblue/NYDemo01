@@ -1,649 +1,503 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>上海闵行航天城 · 3D 园区（按 2.5D 原图 1:1 还原）</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上海闵行航天城 · 3D 园区（1:1 还原 2.5D 原图）</title>
 <style>
-  :root{
-    --bg:#0a1a2a; --pane:rgba(8,20,36,.82); --line:rgba(120,200,255,.18);
-    --txt:#cfe8ff; --dim:#6f93b8; --accent:#4ba3d9; --hi:#67c1ff;
-    --good:#4be19a; --warn:#f5c34b; --bad:#ff6266;
-    --shadow:0 8px 28px rgba(0,0,0,.45);
-    --font:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,sans-serif;
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; overflow: hidden; background: #e9edf0; }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+
+  .hud { position: absolute; z-index: 10; color: #2c3e50; }
+  .topbar {
+    top: 0; left: 0; right: 0; height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+    background: linear-gradient(180deg, rgba(250,252,254,.92), rgba(250,252,254,.75));
+    border-bottom: 1px solid rgba(90,120,150,.18);
+    backdrop-filter: blur(6px);
   }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--font)}
-  #c{display:block;width:100vw;height:100vh}
-  .hud{position:absolute;pointer-events:none}
-  .hud *{pointer-events:auto}
-  .topbar{top:14px;left:14px;right:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;z-index:5}
-  .brand{display:flex;align-items:center;gap:14px;padding:10px 18px;
-    background:linear-gradient(135deg,rgba(11,32,58,.88),rgba(7,22,42,.88));
-    border:1px solid var(--line);border-radius:10px;backdrop-filter:blur(8px);box-shadow:var(--shadow)}
-  .brand .logo{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#4ba3d9,#2e7eb8);
-    display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:20px;
-    box-shadow:0 0 14px rgba(75,163,217,.6)}
-  .brand .t1{font-size:17px;font-weight:700;letter-spacing:1px;color:#fff}
-  .brand .t2{font-size:12px;color:var(--dim);margin-top:2px}
-  .badge{margin-left:8px;padding:3px 8px;border-radius:6px;background:rgba(75,163,217,.16);
-    color:var(--hi);font-size:11px;border:1px solid rgba(75,163,217,.3)}
-  .view-bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-  .vbtn{padding:9px 13px;font-size:12px;background:var(--pane);color:var(--txt);border:1px solid var(--line);
-    border-radius:8px;cursor:pointer;transition:.18s;backdrop-filter:blur(8px);font-family:var(--font)}
-  .vbtn:hover{background:rgba(75,163,217,.18);border-color:var(--accent);color:#fff}
-  .vbtn.active{background:rgba(75,163,217,.25);border-color:var(--hi);color:#fff}
-  .left-pane{position:absolute;left:14px;top:96px;width:272px;background:var(--pane);
-    border:1px solid var(--line);border-radius:10px;padding:14px 16px;backdrop-filter:blur(10px);
-    box-shadow:var(--shadow);z-index:4}
-  .left-pane h3,.legend h3{margin:0 0 12px 0;font-size:13px;font-weight:600;color:#fff;letter-spacing:1px;
-    border-left:3px solid var(--hi);padding-left:8px}
-  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .stat{background:rgba(255,255,255,.04);border-radius:6px;padding:10px;border:1px solid rgba(255,255,255,.05)}
-  .stat .lbl{font-size:11px;color:var(--dim)}
-  .stat .val{font-size:17px;font-weight:700;color:#fff;margin-top:2px;font-family:Consolas,monospace}
-  .stat .u{font-size:11px;color:var(--dim);margin-left:3px;font-weight:400}
-  .stat.good .val{color:var(--good)} .stat.warn .val{color:var(--warn)} .stat.bad .val{color:var(--bad)}
-  .meter{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;
-    border-bottom:1px dashed rgba(120,200,255,.1)}
-  .meter:last-child{border-bottom:none}
-  .meter .v{font-family:Consolas,monospace;color:var(--hi)}
-  .legend{position:absolute;right:14px;top:96px;width:214px;background:var(--pane);
-    border:1px solid var(--line);border-radius:10px;padding:14px 16px;backdrop-filter:blur(10px);
-    box-shadow:var(--shadow);z-index:4;font-size:12px}
-  .lg-row{display:flex;align-items:center;gap:8px;padding:4px 0}
-  .lg-cube{width:14px;height:14px;border-radius:2px;flex-shrink:0}
-  .bottom-bar{position:absolute;left:14px;right:14px;bottom:14px;display:flex;
-    align-items:center;justify-content:space-between;gap:12px;z-index:5}
-  .tip{background:var(--pane);border:1px solid var(--line);border-radius:10px;padding:10px 18px;
-    font-size:12px;color:var(--dim);backdrop-filter:blur(8px);box-shadow:var(--shadow)}
-  .tip b{color:var(--hi)} .tip .s{color:rgba(120,200,255,.2);margin:0 10px}
-  .legend-strip{display:flex;gap:12px;font-size:11px;color:var(--dim)}
-  .legend-strip b{color:#fff}
-  .loader{position:fixed;inset:0;background:var(--bg);z-index:99;display:flex;align-items:center;
-    justify-content:center;flex-direction:column;gap:14px;transition:opacity .6s;color:var(--txt);font-size:13px}
-  .loader.hide{opacity:0;pointer-events:none}
-  .ring{width:46px;height:46px;border:3px solid rgba(75,163,217,.18);border-top-color:var(--hi);
-    border-radius:50%;animation:r 1.2s linear infinite}
-  @keyframes r{to{transform:rotate(360deg)}}
-  #pick{position:absolute;top:96px;left:50%;transform:translateX(-50%);z-index:6;
-    background:var(--pane);border:1px solid var(--line);border-radius:10px;padding:10px 18px;
-    font-size:13px;backdrop-filter:blur(10px);box-shadow:var(--shadow);color:#fff;display:none}
-  #cmp{display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
-    background:rgba(7,18,32,.96);border:1px solid var(--line);border-radius:12px;padding:16px;
-    z-index:50;box-shadow:0 14px 40px rgba(0,0,0,.6);width:min(96vw,1180px)}
-  #cmp .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;color:#fff}
-  #cmp .head b{color:var(--hi);font-size:14px}
-  #cmpClose{background:transparent;border:1px solid var(--line);color:var(--txt);padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font)}
-  #cmpImgWrap{position:relative;width:100%;background:#222;border-radius:8px;overflow:hidden}
-  #cmpImg{width:100%;display:block}
-  #cmpBoxes{position:absolute;inset:0;pointer-events:none}
-  #cmpBoxes div{position:absolute;border:1px solid rgba(90,255,150,.9);background:rgba(90,255,150,.10)}
-  @media(max-width:900px){.left-pane,.legend{display:none}}
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .logo {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: linear-gradient(135deg, #3a8fc7, #2b6ea6);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 15px;
+    box-shadow: 0 2px 8px rgba(43,110,166,.35);
+  }
+  .brand h1 { font-size: 17px; letter-spacing: 1px; color: #1f3a52; }
+  .brand small { font-size: 11px; color: #7a8fa3; letter-spacing: 2px; display: block; }
+  .views { display: flex; gap: 8px; }
+  .vbtn {
+    padding: 6px 14px; font-size: 12px; border-radius: 6px; cursor: pointer;
+    border: 1px solid rgba(58,143,199,.4); background: rgba(255,255,255,.7); color: #2b6ea6;
+    transition: all .2s;
+  }
+  .vbtn:hover { background: #3a8fc7; color: #fff; }
+  .vbtn.active { background: #2b6ea6; color: #fff; border-color: #2b6ea6; }
+
+  .panel {
+    top: 72px; left: 16px; width: 218px;
+    background: rgba(250,252,254,.88); border: 1px solid rgba(90,120,150,.18);
+    border-radius: 10px; padding: 14px 16px; backdrop-filter: blur(6px);
+    box-shadow: 0 4px 16px rgba(50,80,110,.08);
+  }
+  .panel h3 { font-size: 13px; color: #2b6ea6; margin-bottom: 10px; letter-spacing: 2px;
+    border-left: 3px solid #3a8fc7; padding-left: 8px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .stat { background: rgba(58,143,199,.08); border-radius: 6px; padding: 8px 10px; }
+  .stat .v { font-size: 19px; font-weight: 700; color: #1f3a52; }
+  .stat .k { font-size: 10px; color: #7a8fa3; }
+  .krow { display: flex; justify-content: space-between; font-size: 11.5px; padding: 3.5px 0; color: #46617a; }
+  .krow b { color: #1f3a52; font-weight: 600; }
+
+  .legend {
+    bottom: 16px; right: 16px;
+    background: rgba(250,252,254,.88); border: 1px solid rgba(90,120,150,.18);
+    border-radius: 10px; padding: 10px 14px; font-size: 11px; color: #46617a;
+    backdrop-filter: blur(6px);
+  }
+  .legend .li { display: flex; align-items: center; gap: 7px; padding: 2.5px 0; }
+  .legend .sw { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(0,0,0,.12); }
+
+  .tip {
+    bottom: 16px; left: 16px; font-size: 11px; color: #7a8fa3;
+    background: rgba(250,252,254,.8); padding: 8px 12px; border-radius: 8px;
+    border: 1px solid rgba(90,120,150,.15);
+  }
+  .tip b { color: #2b6ea6; }
+
+  #info {
+    position: absolute; z-index: 20; pointer-events: none; display: none;
+    background: rgba(31,58,82,.92); color: #eaf3fa; font-size: 12px;
+    padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(120,180,220,.35);
+    box-shadow: 0 4px 14px rgba(20,40,60,.25); line-height: 1.7;
+  }
+  #info b { color: #8fd0ff; font-size: 13px; }
+
+  #compare {
+    position: absolute; inset: 0; z-index: 50; display: none;
+    background: rgba(30,45,60,.55); backdrop-filter: blur(3px);
+    align-items: center; justify-content: center;
+  }
+  #compare .box {
+    background: #fff; border-radius: 12px; padding: 14px; max-width: 94vw;
+    box-shadow: 0 12px 48px rgba(0,0,0,.3);
+  }
+  #compare canvas { display: block; max-width: 90vw; border-radius: 6px; }
+  #compare .bar { display: flex; justify-content: space-between; align-items: center; padding: 6px 4px 10px; }
+  #compare .bar span { font-size: 13px; color: #2c3e50; }
+  #compare .bar button { padding: 4px 14px; font-size: 12px; border-radius: 6px; border: 1px solid #ccc;
+    background: #f5f7f9; cursor: pointer; }
+  #loading {
+    position: absolute; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
+    background: #e9edf0; color: #2b6ea6; font-size: 14px; letter-spacing: 3px;
+  }
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
+<div id="app"></div>
+<div id="loading">园区加载中 …</div>
 
 <div class="hud topbar">
   <div class="brand">
     <div class="logo">航</div>
     <div>
-      <div class="t1">上海闵行航天城 <span class="badge">3D · 按 2.5D 原图还原</span></div>
-      <div class="t2">航能E联 · 数智能源管理平台 · 园区态势</div>
+      <h1>上海闵行航天城 3D · 1:1 还原 2.5D 原图</h1>
+      <small>航能E联 · 数智能源管理平台 · 园区态势</small>
     </div>
   </div>
-  <div class="view-bar">
-    <button class="vbtn active" data-view="match">原图视角</button>
+  <div class="views">
+    <button class="vbtn active" data-view="orig">原图视角</button>
     <button class="vbtn" data-view="top">正俯视</button>
-    <button class="vbtn" data-view="iso1">西南鸟瞰</button>
-    <button class="vbtn" data-view="iso2">东南鸟瞰</button>
-    <button class="vbtn" data-view="walk">低空漫游</button>
+    <button class="vbtn" data-view="low">低空环视</button>
     <button class="vbtn" id="cmpBtn">原图对照</button>
   </div>
 </div>
 
-<div class="hud left-pane">
+<div class="hud panel">
   <h3>园区态势</h3>
   <div class="stat-grid">
-    <div class="stat"><div class="lbl">建筑总数</div><div class="val" id="s_b">--</div></div>
-    <div class="stat good"><div class="lbl">在线率</div><div class="val">99.2<span class="u">%</span></div></div>
-    <div class="stat"><div class="lbl">设备数</div><div class="val">2418</div></div>
-    <div class="stat bad"><div class="lbl">告警</div><div class="val">7</div></div>
+    <div class="stat"><div class="v" id="stB">-</div><div class="k">建筑总数</div></div>
+    <div class="stat"><div class="v">99.2%</div><div class="k">在线率</div></div>
+    <div class="stat"><div class="v">2418</div><div class="k">设备数</div></div>
+    <div class="stat"><div class="v">7</div><div class="k">告警</div></div>
   </div>
-  <h3 style="margin-top:14px">建筑分类</h3>
-  <div class="meter"><span>光伏屋顶厂房</span><span class="v" id="s_pv">--</span></div>
-  <div class="meter"><span>高层/塔楼</span><span class="v" id="s_tall">--</span></div>
-  <div class="meter"><span>圆顶建筑</span><span class="v" id="s_rd">--</span></div>
-  <div class="meter"><span>普通办公</span><span class="v" id="s_off">--</span></div>
-  <div class="meter"><span>变电站</span><span class="v" id="s_sub">--</span></div>
-  <h3 style="margin-top:14px">园区尺度</h3>
-  <div class="meter"><span>东西向</span><span class="v" id="s_w">--</span></div>
-  <div class="meter"><span>南北向</span><span class="v" id="s_d">--</span></div>
+  <h3>建筑分类</h3>
+  <div id="kindList"></div>
+  <h3>园区尺度</h3>
+  <div class="krow"><span>东西向</span><b>480 m</b></div>
+  <div class="krow"><span>南北向</span><b>120 m</b></div>
 </div>
 
-<div class="hud legend">
-  <h3>图例</h3>
-  <div class="lg-row"><div class="lg-cube" style="background:linear-gradient(180deg,#a8dcff,#3a90c7)"></div>蓝玻璃幕墙楼</div>
-  <div class="lg-row"><div class="lg-cube" style="background:linear-gradient(180deg,#e6ebef,#c8d0d6)"></div>普通办公楼</div>
-  <div class="lg-row"><div class="lg-cube" style="background:linear-gradient(180deg,#7fc4ea,#4a9fd8)"></div>光伏屋顶厂房（A/B/C）</div>
-  <div class="lg-row"><div class="lg-cube" style="background:linear-gradient(180deg,#67c1ff,#1f4f7f)"></div>高层塔楼</div>
-  <div class="lg-row"><div class="lg-cube" style="background:linear-gradient(180deg,#4a9fd8,#e8eef2)"></div>圆顶建筑</div>
-  <div class="lg-row"><div class="lg-cube" style="background:#9c7ad6"></div>变电站</div>
-  <div class="lg-row"><div class="lg-cube" style="background:#8fc0ae"></div>绿化 / 树林</div>
-  <div class="lg-row"><div class="lg-cube" style="background:#dfe3e6"></div>道路 / 广场</div>
-</div>
+<div class="hud legend" id="legend"></div>
+<div class="hud tip">操作：<b>左键</b> 旋转 · <b>滚轮</b> 缩放 · <b>右键</b> 平移 · <b>点击建筑</b> 查看 · 右上切换视角/对照</div>
+<div id="info"></div>
 
-<div class="hud bottom-bar">
-  <div class="tip">
-    <b>操作：</b><span class="s">|</span>左键拖拽旋转 / 滚轮缩放 / 右键平移
-    <span class="s">|</span><b>点击建筑</b>看信息<span class="s">|</span>右上切换视角
+<div id="compare">
+  <div class="box">
+    <div class="bar"><span>原图对照：绿框 = 3D 模型中的建筑（<b id="cmpN"></b> 栋）</span><button id="cmpClose">关闭</button></div>
+    <canvas id="cmpCanvas"></canvas>
   </div>
-  <div class="legend-strip">FPS <b id="fps">--</b> · 建筑 <b id="n_b">--</b></div>
 </div>
-
-<div id="pick"></div>
-<div id="cmp">
-  <div class="head"><b>原图对照（绿框 = 提取的 38 栋建筑 footprint）</b>
-    <button id="cmpClose">关闭 ✕</button></div>
-  <div id="cmpImgWrap"><img id="cmpImg" src="reference.jpg" alt="原图" />
-    <div id="cmpBoxes"></div></div>
-</div>
-
-<div class="loader" id="loader"><div class="ring"></div><div>正在加载园区 3D 模型…</div></div>
 
 <script type="importmap">
-{"imports":{
-  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-}}
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
 </script>
 
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const DATA = {"meta": {"imgW": 1920, "imgH": 480, "parkW": 473.5, "parkD": 118.4, "worldXmin": -236.7, "worldXmax": 236.7, "worldZfar": -59.2, "worldZnear": 59.2}, "buildings": [{"name": "B楼", "X": -179.97, "Z": -44.86, "w": 42.5, "d": 24.02, "h": 9, "kind": "factory-pv", "txt": "B", "ix": 140, "iy": 71, "iw": 170, "ih": 124}, {"name": "A楼", "X": -203.59, "Z": 4.93, "w": 45.0, "d": 61.27, "h": 9, "kind": "factory-pv", "txt": "A", "ix": 72, "iy": 207, "iw": 180, "ih": 273}, {"name": "西区幕墙楼", "X": -165.38, "Z": 7.65, "w": 35.0, "d": 13.0, "h": 20, "kind": "office-blue", "txt": "", "ix": 235, "iy": 262, "iw": 140, "ih": 114}, {"name": "西区楼2", "X": -172.13, "Z": 18.84, "w": 30.0, "d": 8.0, "h": 20, "kind": "office-blue", "txt": "", "ix": 222, "iy": 330, "iw": 120, "ih": 84}, {"name": "西区楼3", "X": -154.92, "Z": 21.41, "w": 17.5, "d": 8.0, "h": 20, "kind": "office-blue", "txt": "", "ix": 317, "iy": 322, "iw": 70, "ih": 94}, {"name": "航天城10KV", "X": -169.66, "Z": -22.15, "w": 22.5, "d": 16.57, "h": 7, "kind": "substation", "txt": "", "ix": 230, "iy": 178, "iw": 90, "ih": 88}, {"name": "光伏厂房C", "X": -107.13, "Z": -26.12, "w": 22.0, "d": 24.02, "h": 9, "kind": "factory-pv", "txt": "", "ix": 481, "iy": 111, "iw": 88, "ih": 124}, {"name": "研发楼D", "X": -91.84, "Z": -47.77, "w": 12.75, "d": 8.0, "h": 15, "kind": "office", "txt": "", "ix": 547, "iy": 65, "iw": 51, "ih": 44}, {"name": "研发高层E", "X": -81.45, "Z": -45.77, "w": 9.5, "d": 8.0, "h": 28, "kind": "office-blue-tall", "txt": "", "ix": 596, "iy": 46, "iw": 38, "ih": 66}, {"name": "综合楼F", "X": -61.04, "Z": -40.58, "w": 27.5, "d": 8.0, "h": 15, "kind": "office", "txt": "", "ix": 644, "iy": 55, "iw": 110, "ih": 68}, {"name": "主办公楼G", "X": -30.57, "Z": -32.92, "w": 31.0, "d": 10.5, "h": 20, "kind": "office-blue", "txt": "", "ix": 763, "iy": 40, "iw": 124, "ih": 104}, {"name": "光伏楼H", "X": -7.8, "Z": -24.45, "w": 16.5, "d": 28.02, "h": 9, "kind": "factory-pv", "txt": "", "ix": 891, "iy": 62, "iw": 66, "ih": 140}, {"name": "圆顶会议中心", "X": -71.95, "Z": 11.82, "w": 27.0, "d": 14.6, "h": 16, "kind": "round", "txt": "", "ix": 627, "iy": 243, "iw": 108, "ih": 108}, {"name": "西区大楼I", "X": -102.07, "Z": 18.75, "w": 29.0, "d": 24.5, "h": 20, "kind": "office-blue", "txt": "", "ix": 508, "iy": 253, "iw": 116, "ih": 160}, {"name": "光伏厂房J", "X": -114.78, "Z": 19.21, "w": 12.0, "d": 23.02, "h": 9, "kind": "factory-pv", "txt": "", "ix": 491, "iy": 298, "iw": 48, "ih": 120}, {"name": "大楼K", "X": -47.14, "Z": 23.84, "w": 28.5, "d": 20.0, "h": 20, "kind": "office-blue", "txt": "", "ix": 730, "iy": 256, "iw": 114, "ih": 142}, {"name": "光伏楼L", "X": -26.48, "Z": 15.56, "w": 18.0, "d": 25.02, "h": 9, "kind": "factory-pv", "txt": "", "ix": 831, "iy": 237, "iw": 72, "ih": 128}, {"name": "楼M", "X": -14.74, "Z": 26.48, "w": 26.0, "d": 29.5, "h": 20, "kind": "office-blue", "txt": "", "ix": 868, "iy": 232, "iw": 104, "ih": 180}, {"name": "中央塔楼", "X": 17.24, "Z": -17.21, "w": 19.0, "d": 8.55, "h": 38, "kind": "tower", "txt": "", "ix": 985, "iy": 28, "iw": 76, "ih": 152}, {"name": "楼N", "X": 14.36, "Z": 10.47, "w": 19.0, "d": 12.0, "h": 20, "kind": "office-blue", "txt": "", "ix": 987, "iy": 189, "iw": 76, "ih": 110}, {"name": "大楼O", "X": 37.29, "Z": 12.72, "w": 35.5, "d": 26.0, "h": 20, "kind": "office-blue", "txt": "", "ix": 1050, "iy": 159, "iw": 142, "ih": 166}, {"name": "大楼P", "X": 66.95, "Z": 16.53, "w": 27.5, "d": 20.0, "h": 20, "kind": "office-blue", "txt": "", "ix": 1185, "iy": 172, "iw": 110, "ih": 142}, {"name": "35KV站", "X": 98.04, "Z": 10.73, "w": 36.0, "d": 12.57, "h": 7, "kind": "substation", "txt": "", "ix": 1288, "iy": 189, "iw": 144, "ih": 72}, {"name": "803所10KV", "X": 90.85, "Z": 60.74, "w": 40.5, "d": 20.32, "h": 7, "kind": "substation", "txt": "", "ix": 1275, "iy": 377, "iw": 162, "ih": 103}, {"name": "北区高层Q", "X": 51.62, "Z": 39.54, "w": 18.0, "d": 18.8, "h": 28, "kind": "office-blue-tall", "txt": "", "ix": 1153, "iy": 249, "iw": 72, "ih": 162}, {"name": "光伏厂房R", "X": 129.29, "Z": -0.5, "w": 20.0, "d": 22.02, "h": 9, "kind": "factory-pv", "txt": "", "ix": 1442, "iy": 104, "iw": 80, "ih": 116}, {"name": "804所10KV", "X": 152.34, "Z": -4.73, "w": 24.5, "d": 21.02, "h": 9, "kind": "factory-pv", "txt": "", "ix": 1523, "iy": 78, "iw": 98, "ih": 112}, {"name": "楼S", "X": 168.22, "Z": 10.19, "w": 21.0, "d": 28.0, "h": 20, "kind": "office-blue", "txt": "", "ix": 1602, "iy": 82, "iw": 84, "ih": 174}, {"name": "楼T", "X": 182.73, "Z": 15.18, "w": 21.0, "d": 26.5, "h": 20, "kind": "office-blue", "txt": "", "ix": 1662, "iy": 98, "iw": 84, "ih": 168}, {"name": "楼U", "X": 194.52, "Z": 15.09, "w": 25.0, "d": 26.0, "h": 20, "kind": "office-blue", "txt": "", "ix": 1701, "iy": 93, "iw": 100, "ih": 166}, {"name": "U型楼V", "X": 213.08, "Z": 26.32, "w": 29.0, "d": 15.5, "h": 20, "kind": "office-blue", "txt": "", "ix": 1770, "iy": 150, "iw": 116, "ih": 124}, {"name": "长条楼W", "X": 157.98, "Z": 60.71, "w": 38.0, "d": 18.0, "h": 20, "kind": "office-blue", "txt": "", "ix": 1548, "iy": 309, "iw": 152, "ih": 134}, {"name": "弧形楼", "X": 124.24, "Z": 49.08, "w": 26.0, "d": 10.65, "h": 14, "kind": "arc-office", "txt": "", "ix": 1430, "iy": 312, "iw": 104, "ih": 86}, {"name": "楼X", "X": 139.57, "Z": 65.0, "w": 25.5, "d": 8.0, "h": 15, "kind": "office", "txt": "", "ix": 1499, "iy": 377, "iw": 102, "ih": 72}, {"name": "楼Y", "X": 188.99, "Z": 78.68, "w": 27.5, "d": 8.0, "h": 20, "kind": "office-blue", "txt": "", "ix": 1699, "iy": 420, "iw": 110, "ih": 60}, {"name": "楼Z", "X": 213.65, "Z": 81.64, "w": 33.0, "d": 8.0, "h": 20, "kind": "office-blue", "txt": "", "ix": 1788, "iy": 420, "iw": 132, "ih": 60}, {"name": "楼AA", "X": 138.58, "Z": 55.44, "w": 28.5, "d": 13.88, "h": 15, "kind": "office", "txt": "", "ix": 1486, "iy": 321, "iw": 114, "ih": 102}, {"name": "长条楼AB", "X": 158.37, "Z": 48.25, "w": 39.0, "d": 27.5, "h": 20, "kind": "office-blue", "txt": "", "ix": 1544, "iy": 240, "iw": 156, "ih": 172}]};
-const B = DATA.buildings, META = DATA.meta;
+const DATA = {"meta": {"parkW": 480, "parkD": 120, "KZ": 0.055, "SY": 3.1, "S": 4.0}, "buildings": [{"name": "B楼", "kind": "factory-pv", "txt": "B", "x": -203.84, "z": -30.2, "w": 59.97, "d": 18.7, "h": 12, "ix": 138, "iy": 82, "iw": 244, "ih": 112}, {"name": "本部10KV大楼", "kind": "office-blue", "txt": null, "x": -191.88, "z": 2.4, "w": 21.13, "d": 11.35, "h": 16, "ix": 193, "iy": 200, "iw": 87, "ih": 95}, {"name": "A楼", "kind": "factory-pv", "txt": "A", "x": -234.78, "z": 23.3, "w": 70.75, "d": 22.7, "h": 12, "ix": 26, "iy": 296, "iw": 288, "ih": 128}, {"name": "西区综合楼", "kind": "office-blue", "txt": null, "x": -167.04, "z": 18.95, "w": 28.07, "d": 26.05, "h": 18, "ix": 296, "iy": 260, "iw": 118, "ih": 160}, {"name": "北侧低层办公楼", "kind": "office", "txt": null, "x": -105.55, "z": -35.52, "w": 15.64, "d": 6.52, "h": 9, "ix": 530, "iy": 70, "iw": 64, "ih": 54}, {"name": "研发高楼", "kind": "tower", "txt": null, "x": -93.27, "z": -31.4, "w": 27.15, "d": 6.4, "h": 24, "ix": 580, "iy": 40, "iw": 110, "ih": 100}, {"name": "光伏厂房1", "kind": "pvstrip", "txt": null, "x": -107.3, "z": -21.75, "w": 14.3, "d": 12.75, "h": 10, "ix": 526, "iy": 122, "iw": 60, "ih": 82}, {"name": "光伏厂房2", "kind": "pvstrip", "txt": null, "x": -92.39, "z": -20.25, "w": 19.35, "d": 11.75, "h": 10, "ix": 586, "iy": 128, "iw": 80, "ih": 78}, {"name": "白顶实验楼", "kind": "office", "txt": null, "x": -63.52, "z": -35.92, "w": 33.21, "d": 14.42, "h": 13, "ix": 698, "iy": 56, "iw": 136, "ih": 98}, {"name": "八部10KV变电站", "kind": "substation", "txt": null, "x": -48.64, "z": -6.58, "w": 34.67, "d": 6.08, "h": 7, "ix": 764, "iy": 192, "iw": 140, "ih": 46}, {"name": "东北白楼", "kind": "office", "txt": null, "x": -25.62, "z": -34.2, "w": 26.26, "d": 31.7, "h": 12, "ix": 850, "iy": 66, "iw": 112, "ih": 164}, {"name": "光伏厂房3", "kind": "pvstrip", "txt": null, "x": -113.93, "z": 7.75, "w": 16.91, "d": 10.75, "h": 10, "ix": 506, "iy": 240, "iw": 70, "ih": 74}, {"name": "光伏厂房4", "kind": "pvstrip", "txt": null, "x": -93.93, "z": 7.75, "w": 17.8, "d": 12.75, "h": 10, "ix": 586, "iy": 240, "iw": 74, "ih": 82}, {"name": "蓝色高塔", "kind": "tower", "txt": null, "x": -102.21, "z": 22.05, "w": 21.46, "d": 18.95, "h": 22, "ix": 556, "iy": 260, "iw": 90, "ih": 144}, {"name": "圆顶会议中心", "kind": "round", "txt": null, "x": -76.87, "z": 11.33, "w": 29.45, "d": 9.92, "h": 13, "ix": 655, "iy": 245, "iw": 120, "ih": 80}, {"name": "会议中心配楼", "kind": "office", "txt": null, "x": -44.98, "z": 8.8, "w": 13.8, "d": 12.7, "h": 12, "ix": 782, "iy": 238, "iw": 58, "ih": 88}, {"name": "10号办公楼", "kind": "office", "txt": null, "x": -30.9, "z": 7.25, "w": 30.22, "d": 14.25, "h": 10, "ix": 838, "iy": 238, "iw": 124, "ih": 88}, {"name": "小型蓝楼", "kind": "office-blue", "txt": null, "x": -18.47, "z": 26.75, "w": 15.18, "d": 5.75, "h": 10, "ix": 892, "iy": 316, "iw": 62, "ih": 54}, {"name": "条纹办公楼", "kind": "office", "txt": null, "x": -1.01, "z": 9.3, "w": 8.83, "d": 12.2, "h": 12, "ix": 958, "iy": 240, "iw": 38, "ih": 86}, {"name": "最高塔楼", "kind": "tower", "txt": null, "x": 0.42, "z": -25.8, "w": 15.54, "d": 8.3, "h": 28, "ix": 956, "iy": 50, "iw": 64, "ih": 120}, {"name": "双子实验楼", "kind": "office", "txt": null, "x": 20.8, "z": -32.65, "w": 34.17, "d": 15.15, "h": 14, "ix": 1036, "iy": 66, "iw": 140, "ih": 104}, {"name": "长白厂房", "kind": "office", "txt": null, "x": 12.27, "z": -13.98, "w": 56.18, "d": 14.97, "h": 11, "ix": 1006, "iy": 150, "iw": 228, "ih": 94}, {"name": "园中小楼1", "kind": "office", "txt": null, "x": 63.01, "z": -36.52, "w": 20.22, "d": 5.02, "h": 9, "ix": 1204, "iy": 66, "iw": 82, "ih": 48}, {"name": "园中小楼2", "kind": "office", "txt": null, "x": 85.45, "z": -35.52, "w": 17.7, "d": 5.52, "h": 9, "ix": 1294, "iy": 70, "iw": 72, "ih": 50}, {"name": "35KV站", "kind": "substation", "txt": null, "x": 83.04, "z": -28.07, "w": 24.06, "d": 8.07, "h": 7, "ix": 1286, "iy": 106, "iw": 98, "ih": 54}, {"name": "803所10KV变电站", "kind": "substation", "txt": null, "x": 66.89, "z": -7.08, "w": 29.61, "d": 7.08, "h": 7, "ix": 1226, "iy": 190, "iw": 120, "ih": 50}, {"name": "东侧光伏厂房", "kind": "factory-pv", "txt": null, "x": 110.46, "z": -35.7, "w": 31.44, "d": 19.2, "h": 12, "ix": 1394, "iy": 60, "iw": 130, "ih": 114}, {"name": "中区白楼", "kind": "office", "txt": null, "x": 32.91, "z": 10.8, "w": 37.44, "d": 10.2, "h": 12, "ix": 1094, "iy": 246, "iw": 152, "ih": 78}, {"name": "中区蓝玻璃楼", "kind": "office-blue", "txt": null, "x": 48.84, "z": 21.12, "w": 23.43, "d": 19.38, "h": 15, "ix": 1160, "iy": 278, "iw": 98, "ih": 124}, {"name": "小型白楼", "kind": "office", "txt": null, "x": 70.42, "z": 28.75, "w": 18.99, "d": 9.25, "h": 10, "ix": 1248, "iy": 324, "iw": 78, "ih": 68}, {"name": "弧形楼2", "kind": "arc", "txt": null, "x": 130.16, "z": -11.98, "w": 26.73, "d": 4.97, "h": 11, "ix": 1478, "iy": 158, "iw": 108, "ih": 54}, {"name": "蓝顶厂房", "kind": "factory-pv", "txt": null, "x": 143.33, "z": -33.2, "w": 21.22, "d": 14.2, "h": 12, "ix": 1526, "iy": 70, "iw": 88, "ih": 94}, {"name": "白顶厂房", "kind": "office", "txt": null, "x": 165.24, "z": -31.7, "w": 22.27, "d": 13.2, "h": 12, "ix": 1614, "iy": 76, "iw": 92, "ih": 90}, {"name": "组合实验楼", "kind": "office", "txt": null, "x": 187.87, "z": -33.98, "w": 23.54, "d": 17.48, "h": 11, "ix": 1704, "iy": 70, "iw": 98, "ih": 104}, {"name": "东缘白楼", "kind": "office", "txt": null, "x": 200.1, "z": -19.98, "w": 14.03, "d": 8.47, "h": 11, "ix": 1756, "iy": 126, "iw": 58, "ih": 68}, {"name": "东缘光伏楼", "kind": "factory-pv", "txt": null, "x": 199.19, "z": -3.48, "w": 22.12, "d": 6.97, "h": 11, "ix": 1756, "iy": 192, "iw": 90, "ih": 62}, {"name": "C楼", "kind": "factory-pv", "txt": "C", "x": 106.74, "z": 13.8, "w": 33.08, "d": 7.7, "h": 12, "ix": 1390, "iy": 258, "iw": 134, "ih": 68}, {"name": "C区综合楼", "kind": "office", "txt": null, "x": 112.65, "z": 24.58, "w": 46.51, "d": 17.92, "h": 13, "ix": 1416, "iy": 298, "iw": 190, "ih": 112}, {"name": "长条蓝玻璃楼", "kind": "office-blue", "txt": null, "x": 163.42, "z": 10.62, "w": 31.93, "d": 10.38, "h": 15, "ix": 1616, "iy": 236, "iw": 130, "ih": 88}, {"name": "东区玻璃塔楼群", "kind": "tower", "txt": null, "x": 197.89, "z": 20.1, "w": 40.07, "d": 16.9, "h": 24, "ix": 1756, "iy": 246, "iw": 164, "ih": 142}], "trees": [[-132.1, 8.5], [-128.0, 13.8], [-167.5, 19.5], [-133.1, 15.6], [-165.2, 8.7], [-153.3, 18.5], [-139.2, 16.4], [-148.8, 4.2], [-142.9, 0.8], [-129.5, 12.4], [-132.8, 6.8], [-122.5, 17.8], [-131.5, 3.5], [-147.4, 0.4], [-164.1, 13.5], [-134.1, 19.3], [-154.9, 7.1], [-147.4, 3.4], [-165.1, 9.3], [-160.3, 13.2], [-149.8, 16.6], [-135.7, 5.9], [-129.5, 16.0], [-151.7, 5.4], [-198.0, 4.0], [-212.7, 2.1], [-195.2, 11.5], [-197.8, 13.1], [-205.2, 10.1], [-214.7, 3.6], [-198.7, 8.7], [-202.1, 12.9], [-199.8, 9.9], [-201.9, 6.3], [-218.3, 8.2], [68.3, -31.8], [104.4, -37.7], [59.7, -36.1], [72.2, -23.3], [86.8, -19.2], [93.5, -31.9], [102.3, -39.9], [58.1, -42.5], [96.6, -30.0], [65.1, -28.7], [64.2, -22.2], [81.3, -32.7], [72.7, -24.4], [77.1, -42.6], [61.8, -13.3], [106.6, -22.1], [70.1, -13.0], [99.3, -21.5], [81.7, -36.4], [60.7, -15.3], [82.2, -38.7], [73.1, -26.1], [65.3, -16.8], [98.2, -21.4], [80.0, -24.5], [88.5, -23.7], [15.5, 27.4], [14.1, 29.1], [23.0, 21.3], [15.8, 31.2], [17.4, 38.8], [30.1, 25.8], [30.8, 18.5], [41.0, 28.9], [36.3, 19.9], [27.1, 29.0], [40.2, 30.9], [27.0, 24.0], [22.6, 29.7], [26.3, 18.5], [36.6, 38.2], [16.9, 30.5], [151.0, 14.7], [154.0, 14.4], [161.4, 17.0], [150.7, 20.5], [153.9, -0.4], [159.0, 7.6], [163.1, 17.9], [154.2, 21.4], [154.3, 11.0], [168.1, 40.6], [165.5, 20.5], [175.3, 41.8], [194.1, 36.3], [193.9, 39.6], [179.6, 26.6], [189.4, 34.4], [173.9, 21.6], [188.8, 25.4], [196.6, 24.9], [162.9, 38.2], [164.9, 23.5], [182.1, 39.2], [166.5, 26.5], [189.2, 41.4], [179.0, 22.7], [159.2, 24.7], [163.4, 34.7], [-143.8, -23.8], [-130.5, -21.3], [-142.5, -14.0], [-130.3, -16.1], [-142.9, -36.4], [-124.7, -27.4], [-139.6, -24.4], [-131.9, -9.0], [147.5, -8.4], [146.0, -15.2], [-178.3, -30.5], [-163.9, -30.5], [-149.6, -30.5], [-135.2, -30.5], [-120.8, -30.5], [-98.3, -30.5], [-80.8, -30.5], [-63.3, -30.5], [112.3, -42.5], [111.0, -18.8], [-136.3, 1.2], [-136.3, 12.5], [-136.3, 23.8], [-136.3, 35.0], [-136.3, 46.2], [-125.1, 1.2], [-125.1, 12.5], [-125.1, 23.8], [-125.0, 35.0], [-125.0, 46.2], [-122.3, -40.5], [-122.1, -28.0], [-122.0, -15.5], [-121.8, -3.0], [-115.3, -40.5], [-115.1, -28.0], [-115.0, -15.5], [-114.8, -3.0], [-122.5, 0.0], [-122.4, 13.3], [-122.3, 26.7], [-122.2, 40.0], [-30.0, 0.0], [-29.2, 21.2], [109.9, 1.2], [110.2, 13.8], [110.6, 26.2], [110.9, 38.8], [149.2, 15.0], [150.3, 40.0], [-22.4, 21.2], [-21.0, 41.2], [54.9, 1.2], [56.1, 16.2], [-225.1, 2.5], [-223.3, 15.0], [-235.0, 46.2], [-212.5, 46.2], [-190.0, 46.2], [-167.5, 46.2], [-117.5, 46.2], [-97.5, 46.2], [-77.5, 46.2], [-57.5, 46.2], [-37.5, 46.2], [-17.5, 46.2], [7.5, 46.2], [30.8, 46.2], [54.1, 46.2], [77.5, 46.2], [182.5, 46.2], [207.5, 46.2], [232.5, 46.2]], "parking": [{"name": "P1", "type": "cars", "x": -63.8, "z": -22.5, "w": 33.9, "d": 11.2}, {"name": "P2", "type": "cars", "x": 150.1, "z": -25.0, "w": 52.3, "d": 18.0}, {"name": "P3", "type": "canopy", "x": -81.6, "z": 20.5, "w": 57.7, "d": 24.5}, {"name": "P4", "type": "canopy", "x": 12.0, "z": 0.5, "w": 21.6, "d": 16.5}, {"name": "P5", "type": "canopy", "x": 72.5, "z": -0.5, "w": 46.5, "d": 17.5}, {"name": "P6", "type": "canopy", "x": 11.0, "z": 18.8, "w": 46.9, "d": 20.8}, {"name": "P7", "type": "canopy", "x": 91.0, "z": 18.8, "w": 23.9, "d": 20.8}], "facilities": [{"name": "足球场", "kind": "football", "x": -143.9, "z": -38.5, "w": 19.8, "d": 12.5}, {"name": "泳池", "kind": "pool", "x": -142.6, "z": -25.0, "w": 11.8, "d": 3.5}, {"name": "篮球场", "kind": "basket", "x": -144.8, "z": -21.0, "w": 14.1, "d": 8.0}]};
+const META = DATA.meta;
 
-// ===== 渲染器 =====
-const canvas = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
-renderer.setPixelRatio(Math.min(devicePixelRatio||1, 2));
-renderer.setSize(innerWidth, innerHeight, false);
+/* ================= 基础 ================= */
+const app = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xd6dce1);
-scene.fog = new THREE.Fog(0xd6dce1, 700, 1600);
+scene.background = new THREE.Color(0xe9edf0);
 
-// ===== 相机：正交（原图为平行投影） =====
-const PW = META.parkW, PD = META.parkD;
-let frustum = 166;
-const camera = new THREE.OrthographicCamera(-1,1,1,-1, 0.5, 4000);
-function updateCam(){
-  const aspect = innerWidth/innerHeight;
-  const wantW = PW * 1.18;          // 视野宽度 ≈ 园区宽度 1.18 倍
-  frustum = wantW / aspect / 2;
-  camera.left = -frustum*aspect; camera.right = frustum*aspect;
+/* 世界组：施加斜切 X' = X + KZ*Z，使正交相机投影与原图 2.5D 完全一致 */
+const world = new THREE.Group();
+scene.add(world);
+world.applyMatrix4(new THREE.Matrix4().set(
+  1, 0, META.KZ, 0,
+  0, 1, 0, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 1
+));
+
+/* 相机（正交） */
+let frustum = 150;
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.5, 5000);
+function updateCam() {
+  const a = innerWidth / innerHeight;
+  camera.left = -frustum * a; camera.right = frustum * a;
   camera.top = frustum; camera.bottom = -frustum;
   camera.updateProjectionMatrix();
 }
 updateCam();
 
-// 运行时错误可视化（便于排查白屏）
-window.addEventListener('error', (e)=>{
-  const el = document.getElementById('loader');
-  if(el) el.innerHTML = '<div style="color:#ff6266;padding:24px;font-size:14px;line-height:1.7">'+
-    '⚠ 运行错误：'+(e.message||'')+'<br>'+(e.filename||'')+' : '+(e.lineno||'')+'</div>';
-});
-
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
-controls.minZoom = 0.35; controls.maxZoom = 6;
 controls.target.set(0, 0, 0);
 
-// 原图俯角/方位角（由投影参数拟合：SY/SZ → 俯角，KZ → 方位角）
-const THETA = Math.atan2(3.1, 4.0);      // ≈37.8°
-const AZ    = 0.116;                      // ≈6.6°
-function setEye(theta, az, dist, tgt){
-  camera.position.set(
-    dist*Math.cos(theta)*Math.sin(az),
-    dist*Math.sin(theta),
-    dist*Math.cos(theta)*Math.cos(az)
-  );
-  controls.target.copy(tgt); camera.lookAt(tgt);
+/* 视角 */
+const TARGET0 = new THREE.Vector3(0, 0, 0);
+function setView(name) {
+  document.querySelectorAll('.vbtn[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+  controls.autoRotate = false;
+  if (name === 'orig') {
+    /* 与原图相同的投影方向：screen-right=+X, screen-up=(0,3.1,-4) 归一 */
+    const u = new THREE.Vector3(0, 3.1, -4).normalize();
+    const zc = new THREE.Vector3(1, 0, 0).cross(u); // 相机位于 +zc 方向
+    camera.position.copy(TARGET0).addScaledVector(zc, 900);
+    camera.up.copy(u);
+    controls.target.copy(TARGET0);
+    frustum = 132;
+  } else if (name === 'top') {
+    camera.position.set(0, 800, 0.01);
+    camera.up.set(0, 0, -1);
+    controls.target.set(0, 0, 0);
+    frustum = 135;
+  } else if (name === 'low') {
+    const u = new THREE.Vector3(0, 1, -0.55).normalize();
+    const zc = new THREE.Vector3(1, 0, 0).cross(u).normalize();
+    camera.position.copy(TARGET0).addScaledVector(zc, 700);
+    camera.up.copy(u);
+    controls.target.copy(TARGET0);
+    frustum = 100;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.5;
+  }
+  camera.lookAt(controls.target);
+  updateCam();
 }
-setEye(THETA, AZ, 900, new THREE.Vector3(0,0,0));
+document.querySelectorAll('.vbtn[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 
-// ===== 光照 =====
-scene.add(new THREE.AmbientLight(0xffffff, 0.72));
-const sun = new THREE.DirectionalLight(0xfff8ee, 0.85);
-sun.position.set(-160, 300, 220);
+/* ================= 灯光 ================= */
+scene.add(new THREE.AmbientLight(0xffffff, 1.15));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+sun.position.set(-180, 260, -120);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048,2048);
-const sc = sun.shadow.camera;
-sc.near=1; sc.far=1400; sc.left=-320; sc.right=320; sc.top=220; sc.bottom=-220;
-sun.shadow.bias = -0.0005;
+sun.shadow.mapSize.set(2048, 2048);
+const sc = 320;
+sun.shadow.camera.left = -sc; sun.shadow.camera.right = sc;
+sun.shadow.camera.top = sc; sun.shadow.camera.bottom = -sc;
+sun.shadow.camera.far = 900;
 scene.add(sun);
-scene.add(new THREE.HemisphereLight(0xdceaff, 0xe8ecef, 0.35));
+const fill = new THREE.DirectionalLight(0xdfeaf5, 0.4);
+fill.position.set(150, 120, 220);
+scene.add(fill);
 
-// ===== 地面 =====
-function groundTex(){
-  const c = document.createElement('canvas'); c.width=2048; c.height=512;
-  const g = c.getContext('2d');
-  g.fillStyle='#dde2e6'; g.fillRect(0,0,2048,512);
-  // 噪声
-  const id=g.getImageData(0,0,2048,512), p=id.data;
-  for(let i=0;i<p.length;i+=4){ const n=(Math.random()-0.5)*7; p[i]+=n;p[i+1]+=n;p[i+2]+=n; }
-  g.putImageData(id,0,0);
-  // 上下主干道（原图 y0~62 / y434~480）
-  g.fillStyle='#e9edf0'; g.fillRect(0,0,2048,68); g.fillRect(0,462,2048,50);
-  g.fillStyle='#f4edb4';
-  for(let x=0;x<2048;x+=54){ g.fillRect(x,32,30,3); }
-  // 纵向道路（按原图视觉：几条主道）
-  g.fillStyle='#e4e9ec';
-  const vroads = [[285,22],[660,18],[960,26],[1300,18],[1640,22]];
-  for(const [x,w] of vroads){ g.fillRect(Math.round(x/1920*2048),68,w,394); }
-  // 横向次道
-  g.fillStyle='#e6eaee';
-  g.fillRect(0,246,2048,12); g.fillRect(0,392,2048,12);
-  // 地块细线
-  g.strokeStyle='rgba(160,175,185,.20)'; g.lineWidth=1;
-  for(let x=0;x<2048;x+=64){ g.beginPath(); g.moveTo(x+.5,68); g.lineTo(x+.5,462); g.stroke(); }
-  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8;
-  return t;
-}
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(PW*1.12, PD*2.2),
-  new THREE.MeshStandardMaterial({ map: groundTex(), roughness:.97 })
-);
-ground.rotation.x = -Math.PI/2; ground.receiveShadow = true;
-scene.add(ground);
-const outer = new THREE.Mesh(new THREE.PlaneGeometry(PW*4, PD*7),
-  new THREE.MeshStandardMaterial({ color:0xd2d8dc, roughness:1 }));
-outer.rotation.x=-Math.PI/2; outer.position.y=-0.06; scene.add(outer);
-
-// ===== 纹理工厂 =====
-function pvRoof(letter){
-  const c=document.createElement('canvas'); c.width=c.height=256;
-  const g=c.getContext('2d');
-  g.fillStyle='#57a9dd'; g.fillRect(0,0,256,256);
-  g.fillStyle='#3b8dc4';
-  for(let i=0;i<18;i++){ g.fillRect(0,i*15+9,256,4); }
-  g.strokeStyle='rgba(24,72,105,.85)'; g.lineWidth=1;
-  for(let x=0;x<256;x+=14){ g.beginPath(); g.moveTo(x+.5,0); g.lineTo(x+.5,256); g.stroke(); }
-  if(letter){
-    g.fillStyle='rgba(255,255,255,.85)';
-    g.font='bold 118px "PingFang SC",Arial'; g.textAlign='center'; g.textBaseline='middle';
-    g.fillText(letter,128,134);
-  }
-  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
-}
-function glass(repx,repy){
-  const c=document.createElement('canvas'); c.width=c.height=512;
-  const g=c.getContext('2d');
-  g.fillStyle='#b8e0f2'; g.fillRect(0,0,512,512);
-  const fh=32;
-  for(let y=0;y<512;y+=fh){
-    g.fillStyle='#3a90c7'; g.fillRect(0,y+3,512,fh-6);
-    g.fillStyle='rgba(255,255,255,.30)'; g.fillRect(0,y+5,512,2);
-  }
-  g.strokeStyle='rgba(28,79,112,.8)'; g.lineWidth=1;
-  for(let x=0;x<512;x+=32){ g.beginPath(); g.moveTo(x+.5,0); g.lineTo(x+.5,512); g.stroke(); }
-  for(let y=0;y<512;y+=fh){ g.beginPath(); g.moveTo(0,y+.5); g.lineTo(512,y+.5); g.stroke(); }
-  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace;
-  t.wrapS=t.wrapT=THREE.RepeatWrapping;
-  t.repeat.set(Math.max(1,repx), Math.max(1,repy));
-  return t;
-}
-const plainRoof = (()=>{ const c=document.createElement('canvas'); c.width=c.height=256;
-  const g=c.getContext('2d'); g.fillStyle='#dfe6eb'; g.fillRect(0,0,256,256);
-  g.fillStyle='rgba(255,255,255,.20)';
-  for(let i=0;i<6;i++){ g.fillRect(40+(i%3)*70, 40+((i/3)|0)*100, 50,30); }
-  g.fillStyle='rgba(0,0,0,.09)';
-  for(let i=0;i<6;i++){ g.fillRect(40+(i%3)*70+50, 40+((i/3)|0)*100, 4,30); }
-  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; })();
-
-const BOX = new THREE.BoxGeometry(1,1,1);
-const MAT_PLAIN = new THREE.MeshStandardMaterial({ map: plainRoof, roughness:.78 });
-const MAT_WHITE = new THREE.MeshStandardMaterial({ color:0xe9eef2, roughness:.72 });
-const MAT_BASE  = new THREE.MeshStandardMaterial({ color:0x93a0a9, roughness:.88 });
-
-// ===== 建筑工厂 =====
-function buildFactory(b){
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(BOX, MAT_WHITE);
-  body.scale.set(b.w, b.h, b.d); body.position.y = b.h/2;
-  body.castShadow = body.receiveShadow = true; g.add(body);
-  // 蓝色腰带
-  const band = new THREE.Mesh(BOX, new THREE.MeshStandardMaterial({ color:0x4ba3d9, roughness:.6, metalness:.2 }));
-  band.scale.set(b.w+0.4, b.h*0.2, b.d+0.4); band.position.y = b.h*0.44; g.add(band);
-  // 光伏顶
-  const roof = new THREE.Mesh(BOX, new THREE.MeshStandardMaterial({
-    map: pvRoof(b.txt || null), roughness:.5, metalness:.15 }));
-  roof.scale.set(b.w+0.6, 0.5, b.d+0.6); roof.position.y = b.h+0.25;
-  roof.castShadow = true; g.add(roof);
-  return g;
-}
-function buildOffice(b, blue){
-  const g = new THREE.Group();
-  const mat = blue
-    ? new THREE.MeshStandardMaterial({ map: glass(Math.max(1,b.w/8), Math.max(1,b.h/4)), roughness:.45, metalness:.22 })
-    : MAT_WHITE;
-  const body = new THREE.Mesh(BOX, mat);
-  body.scale.set(b.w, b.h, b.d); body.position.y = b.h/2;
-  body.castShadow = body.receiveShadow = true; g.add(body);
-  const roof = new THREE.Mesh(BOX, MAT_PLAIN);
-  roof.scale.set(b.w+0.4, 0.6, b.d+0.4); roof.position.y = b.h+0.3;
-  roof.castShadow = true; g.add(roof);
-  const base = new THREE.Mesh(BOX, MAT_BASE);
-  base.scale.set(b.w+0.3, 1.0, b.d+0.3); base.position.y = 0.5; g.add(base);
-  return g;
-}
-function buildTall(b){
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(BOX, new THREE.MeshStandardMaterial({
-    map: glass(Math.max(1,b.w/6), Math.max(1,b.h/3)), roughness:.4, metalness:.3 }));
-  body.scale.set(b.w, b.h, b.d); body.position.y = b.h/2;
-  body.castShadow = body.receiveShadow = true; g.add(body);
-  const roof = new THREE.Mesh(BOX, MAT_PLAIN);
-  roof.scale.set(b.w+0.4, 0.7, b.d+0.4); roof.position.y = b.h+0.35; g.add(roof);
-  // 裙楼
-  const skirt = new THREE.Mesh(BOX, new THREE.MeshStandardMaterial({ color:0x9aa6b0, roughness:.7 }));
-  skirt.scale.set(b.w*1.35, b.h*0.16, b.d*1.28); skirt.position.y = b.h*0.08;
-  skirt.castShadow = skirt.receiveShadow = true; g.add(skirt);
-  if(b.h > 26){
-    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,4,8),
-      new THREE.MeshStandardMaterial({ color:0x8b949c }));
-    ant.position.y = b.h + 2.6; g.add(ant);
-  }
-  return g;
-}
-function buildRound(b){
-  const g = new THREE.Group();
-  const r = Math.min(b.w, b.d)/2;
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(r, r, b.h, 40), MAT_WHITE);
-  body.position.y = b.h/2; body.castShadow = body.receiveShadow = true; g.add(body);
-  const dome = new THREE.Mesh(
-    new THREE.SphereGeometry(r, 40, 18, 0, Math.PI*2, 0, Math.PI/2),
-    new THREE.MeshStandardMaterial({ color:0x4a9fd8, roughness:.45, metalness:.3 }));
-  dome.position.y = b.h; dome.castShadow = true; g.add(dome);
-  const tip = new THREE.Mesh(new THREE.ConeGeometry(r*0.13, r*0.45, 16),
-    new THREE.MeshStandardMaterial({ color:0x7d9cb2 }));
-  tip.position.y = b.h + r + r*0.2; g.add(tip);
-  return g;
-}
-function buildArc(b){
-  const g = new THREE.Group();
-  const r = Math.max(b.w, b.d) * 0.62;
-  const geo = new THREE.CylinderGeometry(r, r, b.h, 36, 1, false, Math.PI*0.15, Math.PI*0.7);
-  const body = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-    map: glass(1, Math.max(1,b.h/4)), roughness:.45, metalness:.22 }));
-  body.position.y = b.h/2; body.castShadow = body.receiveShadow = true; g.add(body);
-  return g;
-}
-function buildSub(b){
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(BOX, new THREE.MeshStandardMaterial({ color:0xc2c9ce, roughness:.72 }));
-  body.scale.set(b.w, b.h, b.d); body.position.y = b.h/2;
-  body.castShadow = body.receiveShadow = true; g.add(body);
-  for(let i=0;i<3;i++){
-    const dv = new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.7,1.6,12),
-      new THREE.MeshStandardMaterial({ color:0x9c7ad6 }));
-    dv.position.set(-b.w/4+i*b.w/4, b.h+0.8, 0); g.add(dv);
-  }
-  return g;
-}
-
-const BUILDS = [];
-const FACTORY = (b)=>buildFactory(b);
-const KIND = {
-  "factory-pv": FACTORY,
-  "office": (b)=>buildOffice(b,false),
-  "office-blue": (b)=>buildOffice(b,true),
-  "office-blue-tall": buildTall,
-  "tower": buildTall,
-  "round": buildRound,
-  "arc-office": buildArc,
-  "substation": buildSub,
-};
-for(const b of B){
-  const g = (KIND[b.kind]||KIND["office"])(b);
-  g.position.set(b.X, 0, b.Z);
-  g.userData = { name:b.name, kind:b.kind, w:Math.round(b.w), d:Math.round(b.d),
-                 h:Math.round(b.h), floors:Math.max(1,Math.round(b.h/3.2)) };
-  scene.add(g); BUILDS.push(g);
-}
-
-// ===== 装饰：体育场（原图 x330-480,y75-210）=====
-function makeStadium(){
-  const g = new THREE.Group();
-  const track = new THREE.Mesh(new THREE.RingGeometry(11,14.5,40),
-    new THREE.MeshStandardMaterial({ color:0xb06f6f, roughness:.92 }));
-  track.rotation.x=-Math.PI/2; track.position.y=0.06; g.add(track);
-  const field = new THREE.Mesh(new THREE.CircleGeometry(10.5,40),
-    new THREE.MeshStandardMaterial({ color:0x5fb89a, roughness:.95 }));
-  field.rotation.x=-Math.PI/2; field.position.y=0.05; g.add(field);
-  for(let i=0;i<4;i++){
-    const st = new THREE.Mesh(new THREE.BoxGeometry(2.2,1.6,16),
-      new THREE.MeshStandardMaterial({ color:0xcfd8de, roughness:.72 }));
-    st.position.set(Math.cos(i*Math.PI/2)*17, 0.8, Math.sin(i*Math.PI/2)*17);
-    st.rotation.y = i*Math.PI/2; st.castShadow=true; g.add(st);
-  }
-  return g;
-}
-function w2(ix, iy){   // 原图像素 -> 世界
-  const SX=4.0, SZ=4.0, KX=-0.12, KZ=0.115, OX=960, OY=240;
-  const DET = SX*SZ - (SZ*KZ)*(SX*KX);
-  const a=ix-OX, bb=iy-OY;
-  return [ (a*SZ-(SZ*KZ)*bb)/DET, (SX*bb-(SX*KX)*a)/DET ];
-}
-const st = makeStadium();
-{ const [x,z] = w2(405, 145); st.position.set(x,0,z); }
-scene.add(st);
-
-// ===== 装饰：中央圆环雕塑（原图 x96-190,y235-295）=====
-function makeRing(){
-  const g = new THREE.Group();
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(8,0.9,14,44),
-    new THREE.MeshStandardMaterial({ color:0x67c1ff, roughness:.45, emissive:0x1f4f7f, emissiveIntensity:.35 }));
-  ring.rotation.x = Math.PI/2; ring.position.y = 3.2; g.add(ring);
-  const orb = new THREE.Mesh(new THREE.SphereGeometry(2.2,24,16),
-    new THREE.MeshStandardMaterial({ color:0x9be0ff, roughness:.35, emissive:0x4ba3d9, emissiveIntensity:.65 }));
-  orb.position.y = 3.2; g.add(orb);
-  const pool = new THREE.Mesh(new THREE.CircleGeometry(13,40),
-    new THREE.MeshStandardMaterial({ color:0xc9d9e2, roughness:.7 }));
-  pool.rotation.x=-Math.PI/2; pool.position.y=0.04; g.add(pool);
-  return g;
-}
-const ringObj = makeRing();
-{ const [x,z] = w2(143, 265); ringObj.position.set(x,0,z); }
-scene.add(ringObj);
-
-// ===== 装饰：停车场（原图几处）=====
-function makeParking(ix, iy, iw, ih){
-  const g = new THREE.Group();
-  const [x,z] = w2(ix+iw/2, iy+ih/2);
-  const W = iw/4, D = ih/4;
-  const slab = new THREE.Mesh(new THREE.PlaneGeometry(W,D),
-    new THREE.MeshStandardMaterial({ color:0xd3d9de, roughness:.95 }));
-  slab.rotation.x=-Math.PI/2; slab.position.y=0.03; g.add(slab);
-  // 车位线
-  const n = Math.max(2, Math.floor(W/3));
-  for(let i=0;i<n;i++){
-    const line = new THREE.Mesh(new THREE.PlaneGeometry(0.25, D*0.7),
-      new THREE.MeshStandardMaterial({ color:0xf2f5f7 }));
-    line.rotation.x=-Math.PI/2;
-    line.position.set(-W/2 + (i+0.5)*(W/n), 0.05, 0);
-    g.add(line);
-  }
-  // 车辆
-  const carMat = [0x6fa8d8,0x8fbde0,0xc8d6e2,0x7fc4ea];
-  for(let i=0;i<n;i++) for(const sgn of [-1,1]){
-    if(Math.random()<0.35) continue;
-    const car = new THREE.Mesh(new THREE.BoxGeometry(1.7,1.1,3.6),
-      new THREE.MeshStandardMaterial({ color: carMat[(i+sgn+4)%4], roughness:.5, metalness:.2 }));
-    car.position.set(-W/2 + (i+0.5)*(W/n), 0.6, sgn*D*0.22);
-    g.add(car);
-  }
-  g.position.set(x,0,z);
-  return g;
-}
-[[670,110,90,80],[960,280,70,190],[1050,245,110,225],[1240,245,100,225],[1620,305,160,135]]
-  .forEach(([a,b,c,d]) => scene.add(makeParking(a,b,c,d)));
-
-// ===== 装饰：行道树 =====
-const treeGeo = new THREE.SphereGeometry(1.5, 8, 6);
-const trunkGeo = new THREE.CylinderGeometry(0.28,0.38,1.9,6);
-const treeMat = new THREE.MeshStandardMaterial({ color:0x9dc3d2, roughness:.9 });
-const trunkMat = new THREE.MeshStandardMaterial({ color:0x8b9aa6, roughness:.9 });
-function addTree(x,z,s){
-  const g = new THREE.Group();
-  const t = new THREE.Mesh(trunkGeo, trunkMat); t.position.y=0.95; g.add(t);
-  const cr = new THREE.Mesh(treeGeo, treeMat); cr.position.y=2.9; cr.castShadow=true; g.add(cr);
-  g.scale.setScalar(s); g.position.set(x,0,z); scene.add(g);
-}
-// 沿主干道 / 逐条道路种树
-const roadX = [[285,22],[660,18],[960,26],[1300,18],[1640,22]].map(([px,w])=>[w2(px+w/2,240)[0], w/4]);
-for(const [rx, rw] of roadX){
-  for(let i=0;i<Math.floor(PD/7);i++){
-    const z = -PD/2 + 3 + i*7;
-    addTree(rx - rw/2 - 2.2, z, 0.85 + Math.random()*0.3);
-    addTree(rx + rw/2 + 2.2, z, 0.85 + Math.random()*0.3);
-  }
-}
-// 主入口林荫道（原图靠左 285px 附近）两侧补密
-{ const [lx] = w2(285, 240);
-  for(let i=0;i<Math.floor(PD/5);i++){ const z=-PD/2+2+i*5; addTree(lx-3.2,z,0.8); addTree(lx+3.2,z,0.8); } }
-// 随机绿化组团
-for(let i=0;i<26;i++){
-  const x = -PW/2 + 20 + Math.random()*(PW-40);
-  const z = -PD/2 + 6 + Math.random()*(PD-12);
-  addTree(x, z, 0.7 + Math.random()*0.5);
-}
-
-// ===== 视角预设 =====
-const VIEWS = {
-  match: { theta: THETA, az: AZ, dist: 900, tgt:[0,0,0] },
-  top:   { theta: Math.PI/2*0.995, az: 0, dist: 780, tgt:[0,0,0] },
-  iso1:  { theta: Math.PI/5, az: -0.75, dist: 820, tgt:[0,0,0] },
-  iso2:  { theta: Math.PI/5, az:  0.85, dist: 820, tgt:[0,0,0] },
-  walk:  { theta: 0.20, az: 0.10, dist: 420, tgt:[-120,10,-6] },
-};
-function setView(n){
-  const v = VIEWS[n]; if(!v) return;
-  const fp = camera.position.clone(), ft = controls.target.clone();
-  const tt = new THREE.Vector3(...v.tgt);
-  const tp = new THREE.Vector3(
-    v.dist*Math.cos(v.theta)*Math.sin(v.az),
-    v.dist*Math.sin(v.theta),
-    v.dist*Math.cos(v.theta)*Math.cos(v.az)
+/* ================= 地面（原图反投影纹理） ================= */
+const texLoader = new THREE.TextureLoader();
+texLoader.load('ground_tex.jpg', (tex) => {
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  const g = new THREE.Mesh(
+    new THREE.PlaneGeometry(META.parkW, META.parkD),
+    new THREE.MeshBasicMaterial({ map: tex })
   );
-  const t0 = performance.now(), dur = 950;
-  (function step(){
-    const t = Math.min(1,(performance.now()-t0)/dur);
-    const e = .5 - Math.cos(t*Math.PI)/2;
-    camera.position.lerpVectors(fp,tp,e);
-    controls.target.lerpVectors(ft,tt,e);
-    camera.lookAt(controls.target);
-    if(t<1) requestAnimationFrame(step);
-  })();
+  g.rotation.x = -Math.PI / 2;
+  g.position.y = 0;
+  world.add(g);
+  document.getElementById('loading').style.display = 'none';
+});
+/* 地面外的衬底 */
+const base = new THREE.Mesh(
+  new THREE.PlaneGeometry(1400, 700),
+  new THREE.MeshLambertMaterial({ color: 0xdde2e6 })
+);
+base.rotation.x = -Math.PI / 2;
+base.position.y = -0.15;
+base.receiveShadow = true;
+world.add(base);
+
+/* ================= 程序化立面纹理 ================= */
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }
-document.querySelectorAll('.vbtn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    if(btn.id==='cmpBtn') return;
-    document.querySelectorAll('.vbtn').forEach(x=>x.classList.remove('active'));
-    btn.classList.add('active');
-    setView(btn.dataset.view);
+/* 玻璃幕墙（横带） */
+function glassTex(base, band, floors = 6) {
+  return canvasTex(128, 128, (ctx, w, h) => {
+    ctx.fillStyle = base; ctx.fillRect(0, 0, w, h);
+    const fh = h / floors;
+    for (let i = 0; i < floors; i++) {
+      ctx.fillStyle = band;
+      ctx.fillRect(0, i * fh + fh * 0.18, w, fh * 0.5);
+      ctx.fillStyle = 'rgba(255,255,255,.28)';
+      for (let x = 0; x < w; x += 16) ctx.fillRect(x, i * fh + fh * 0.18, 1.5, fh * 0.5);
+    }
   });
-});
-
-// ===== 拾取 =====
-const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
-let picked = null;
-const pickEl = document.getElementById('pick');
-canvas.addEventListener('click', e=>{
-  const r = canvas.getBoundingClientRect();
-  mouse.x = ((e.clientX-r.left)/r.width)*2-1;
-  mouse.y = -((e.clientY-r.top)/r.height)*2+1;
-  ray.setFromCamera(mouse, camera);
-  const hit = ray.intersectObjects(BUILDS, true);
-  if(hit.length){
-    let o = hit[0].object;
-    while(o.parent && !BUILDS.includes(o)) o = o.parent;
-    if(picked === o){ unpick(); return; }
-    unpick(); picked = o;
-    const u = o.userData;
-    const tag = { 'factory-pv':'（光伏屋顶厂房）','tower':'（高层塔楼）',
-      'office-blue-tall':'（高层办公楼）','round':'（圆顶建筑）',
-      'arc-office':'（弧形办公楼）','substation':'（变电站）',
-      'office-blue':'（蓝玻璃幕墙）','office':'（普通办公）' }[u.kind] || '';
-    pickEl.innerHTML = `<b style="color:var(--hi)">${u.name}</b> ${tag}<br>占地 ${u.w}×${u.d}m · 高度 ${u.h}m · 约 ${u.floors} 层`;
-    pickEl.style.display='block';
-    o.traverse(m=>{ if(m.material && 'emissive' in m.material){
-      m.material.emissive = new THREE.Color(0x2a6a9a); m.material.emissiveIntensity=.35; }});
-  } else unpick();
-});
-function unpick(){
-  if(!picked) return;
-  picked.traverse(m=>{ if(m.material && 'emissive' in m.material){
-    m.material.emissive = new THREE.Color(0x000000); m.material.emissiveIntensity=0; }});
-  picked=null; pickEl.style.display='none';
+}
+/* 光伏屋顶（可带字） */
+function pvTex(letter, strips) {
+  return canvasTex(256, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#1f4e8c'; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#2f6cb8';
+    const sw = strips ? 10 : 14;
+    for (let x = 0; x < w; x += sw * 2) ctx.fillRect(x, 0, sw, h);
+    ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 2;
+    for (let y = 0; y < h; y += 22) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+    if (letter) {
+      ctx.fillStyle = '#f2f7fb';
+      ctx.font = 'bold 92px Arial';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(letter, w / 2, h / 2 + 4);
+    }
+  });
+}
+/* 白屋顶（带设备痕迹） */
+function whiteRoofTex() {
+  return canvasTex(128, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#eef1f4'; ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#c9d2d9'; ctx.lineWidth = 3;
+    ctx.strokeRect(8, 8, w - 16, h - 16);
+    ctx.fillStyle = '#d4dbe1';
+    ctx.fillRect(w * 0.2, h * 0.25, 22, 12);
+    ctx.fillRect(w * 0.6, h * 0.55, 26, 14);
+    ctx.fillRect(w * 0.35, h * 0.7, 14, 10);
+  });
 }
 
-// ===== 原图对照 =====
-const cmpBtn = document.getElementById('cmpBtn'), cmpEl = document.getElementById('cmp');
-function drawCmpBoxes(){
-  const wrap = document.getElementById('cmpBoxes');
-  if(wrap.childElementCount) return;
-  for(const b of B){
-    const d = document.createElement('div');
-    d.style.cssText = `left:${b.ix/META.imgW*100}%;top:${b.iy/META.imgH*100}%;`+
-      `width:${b.iw/META.imgW*100}%;height:${b.ih/META.imgH*100}%`;
-    wrap.appendChild(d);
+const TEX = {
+  glassBlue:  glassTex('#7fb6dc', '#2e7ab8', 6),
+  glassTall:  glassTex('#5ea4d4', '#1f5f9c', 9),
+  officeBand: glassTex('#e8edf1', '#9cc3dd', 5),
+  whiteWall:  canvasTex(64, 64, (ctx, w, h) => { ctx.fillStyle = '#e6eaee'; ctx.fillRect(0, 0, w, h); }),
+  subWall:    canvasTex(64, 64, (ctx, w, h) => { ctx.fillStyle = '#d3d9de'; ctx.fillRect(0, 0, w, h); }),
+};
+
+function matsFor(b) {
+  const roof = () => {
+    if (b.kind === 'factory-pv') return new THREE.MeshLambertMaterial({ map: pvTex(b.txt, false) });
+    if (b.kind === 'pvstrip')    return new THREE.MeshLambertMaterial({ map: pvTex(null, true) });
+    return new THREE.MeshLambertMaterial({ map: whiteRoofTex() });
+  };
+  let wall;
+  switch (b.kind) {
+    case 'tower':       wall = new THREE.MeshLambertMaterial({ map: TEX.glassTall }); break;
+    case 'office-blue': wall = new THREE.MeshLambertMaterial({ map: TEX.glassBlue }); break;
+    case 'round': case 'arc':
+                        wall = new THREE.MeshLambertMaterial({ map: TEX.glassBlue }); break;
+    case 'substation':  wall = new THREE.MeshLambertMaterial({ map: TEX.subWall }); break;
+    case 'factory-pv':
+    case 'pvstrip':     wall = new THREE.MeshLambertMaterial({ map: TEX.officeBand }); break;
+    default:            wall = new THREE.MeshLambertMaterial({ map: TEX.whiteWall });
   }
+  return { wall, roof: roof() };
 }
-cmpBtn.addEventListener('click', ()=>{
-  const on = cmpEl.style.display === 'none' || cmpEl.style.display === '';
-  cmpEl.style.display = on ? 'block':'none';
-  cmpBtn.classList.toggle('active', on);
-  if(on) drawCmpBoxes();
-});
-document.getElementById('cmpClose').addEventListener('click', ()=>{
-  cmpEl.style.display='none'; cmpBtn.classList.remove('active');
+
+/* ================= 建筑 ================= */
+const buildings = [];
+const KIND_NAME = {
+  'factory-pv': '光伏屋顶厂房', 'pvstrip': '光伏带厂房', 'office-blue': '蓝玻璃幕墙楼',
+  'tower': '高层塔楼', 'round': '圆顶建筑', 'arc': '弧形建筑',
+  'substation': '变电站', 'office': '普通办公楼',
+};
+
+for (const b of DATA.buildings) {
+  const g = new THREE.Group();
+  const { wall, roof } = matsFor(b);
+  let mesh;
+  if (b.kind === 'round') {
+    const r = Math.min(b.w, b.d) / 2;
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, b.h, 40), wall);
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(r * 0.96, 40, 16, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshLambertMaterial({ color: 0xcfd8de })
+    );
+    dome.position.y = b.h / 2;
+    dome.scale.y = 0.45;
+    mesh.add(dome);
+  } else if (b.kind === 'arc') {
+    const r = Math.min(b.w, b.d) / 2 + 2;
+    mesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(r, r, b.h, 32, 1, false, Math.PI * 0.15, Math.PI * 0.85),
+      new THREE.MeshLambertMaterial({ map: TEX.glassBlue, side: THREE.DoubleSide })
+    );
+  } else {
+    mesh = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, b.d), [wall, wall, roof, wall, wall, wall]);
+  }
+  mesh.position.y = b.h / 2;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  g.add(mesh);
+  g.position.set(b.x + b.w / 2, 0, b.z + b.d / 2);
+  g.userData = b;
+  world.add(g);
+  buildings.push(g);
+}
+
+/* ================= 树（蓝灰色锥形，与原图风格一致） ================= */
+const treeG = new THREE.Group();
+{
+  const crown1 = new THREE.ConeGeometry(1.5, 3.6, 7);
+  const crown2 = new THREE.ConeGeometry(1.05, 2.6, 7);
+  const trunk = new THREE.CylinderGeometry(0.22, 0.3, 1.4, 5);
+  const mC1 = new THREE.MeshLambertMaterial({ color: 0x87a2b8 });
+  const mC2 = new THREE.MeshLambertMaterial({ color: 0x9db4c6 });
+  const mT = new THREE.MeshLambertMaterial({ color: 0x8b939a });
+  const n = DATA.trees.length;
+  const i1 = new THREE.InstancedMesh(crown1, mC1, n);
+  const i2 = new THREE.InstancedMesh(crown2, mC2, n);
+  const i3 = new THREE.InstancedMesh(trunk, mT, n);
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const s = new THREE.Vector3();
+  for (let i = 0; i < n; i++) {
+    const [X, Z] = DATA.trees[i];
+    const sc = 0.8 + (i % 7) * 0.09;
+    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), (i * 2.39) % 6.28);
+    s.set(sc, sc * (1 + (i % 3) * 0.12), sc);
+    m.compose(new THREE.Vector3(X, 0.7 * sc, Z), q, s); i3.setMatrixAt(i, m);
+    m.compose(new THREE.Vector3(X, (1.4 + 1.8) * sc, Z), q, s); i1.setMatrixAt(i, m);
+    m.compose(new THREE.Vector3(X, (1.4 + 3.4) * sc, Z), q, s); i2.setMatrixAt(i, m);
+  }
+  i1.castShadow = i2.castShadow = true;
+  treeG.add(i1, i2, i3);
+}
+world.add(treeG);
+
+/* ================= HUD ================= */
+const kindCount = {};
+for (const b of DATA.buildings) kindCount[b.kind] = (kindCount[b.kind] || 0) + 1;
+document.getElementById('stB').textContent = DATA.buildings.length;
+document.getElementById('kindList').innerHTML = Object.entries(kindCount)
+  .map(([k, v]) => `<div class="krow"><span>${KIND_NAME[k] || k}</span><b>${v} 栋</b></div>`).join('');
+const KIND_COLOR = {
+  'factory-pv': '#2f6cb8', 'pvstrip': '#5b8fd0', 'office-blue': '#3a8fc7', 'tower': '#1f5f9c',
+  'round': '#6fb3e0', 'arc': '#4f9cd2', 'substation': '#c3ccd3', 'office': '#e6eaee',
+};
+document.getElementById('legend').innerHTML =
+  '<div style="font-weight:600;color:#2b6ea6;margin-bottom:4px">图例</div>' +
+  Object.entries(KIND_NAME).map(([k, n]) =>
+    `<div class="li"><span class="sw" style="background:${KIND_COLOR[k]}"></span>${n}</div>`).join('');
+
+/* ================= 点击交互 ================= */
+const ray = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+const info = document.getElementById('info');
+let picked = null;
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  mouse.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  const hits = ray.intersectObjects(buildings, true);
+  if (hits.length) {
+    let g = hits[0].object;
+    while (g.parent && !g.userData.name) g = g.parent;
+    const b = g.userData;
+    if (picked) picked.traverse(o => { if (o.material && o.material.emissive) o.material.emissive.setHex(0); });
+    picked = g;
+    g.traverse(o => { if (o.material && o.material.emissive) o.material.emissive.setHex(0x224455); });
+    info.style.display = 'block';
+    info.style.left = (e.clientX + 14) + 'px';
+    info.style.top = (e.clientY + 10) + 'px';
+    info.innerHTML = `<b>${b.name}</b><br>类型：${KIND_NAME[b.kind] || b.kind}<br>占地：${b.w.toFixed(0)} × ${b.d.toFixed(0)} m<br>高度：${b.h.toFixed(0)} m`;
+  } else {
+    if (picked) picked.traverse(o => { if (o.material && o.material.emissive) o.material.emissive.setHex(0); });
+    picked = null;
+    info.style.display = 'none';
+  }
 });
 
-// ===== 循环 =====
-addEventListener('resize', ()=>{ updateCam(); renderer.setSize(innerWidth, innerHeight, false); });
-const fpsEl = document.getElementById('fps');
-let ft2 = performance.now(), acc=0, cnt=0;
-(function loop(){
+/* ================= 原图对照 ================= */
+document.getElementById('cmpBtn').addEventListener('click', () => {
+  const cv = document.getElementById('cmpCanvas');
+  const img = new Image();
+  img.onload = () => {
+    const scale = Math.min(1, (innerWidth * 0.9) / img.width);
+    cv.width = img.width * scale; cv.height = img.height * scale;
+    const ctx = cv.getContext('2d');
+    ctx.drawImage(img, 0, 0, cv.width, cv.height);
+    ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2;
+    ctx.font = `${11}px Arial`; ctx.fillStyle = '#22c55e';
+    DATA.buildings.forEach((b, i) => {
+      ctx.strokeRect(b.ix * scale, b.iy * scale, b.iw * scale, b.ih * scale);
+      ctx.fillText(i + 1, b.ix * scale + 3, b.iy * scale + 12);
+    });
+    document.getElementById('cmpN').textContent = DATA.buildings.length;
+    document.getElementById('compare').style.display = 'flex';
+  };
+  img.src = 'reference.jpg';
+});
+document.getElementById('cmpClose').addEventListener('click', () =>
+  document.getElementById('compare').style.display = 'none');
+document.getElementById('compare').addEventListener('click', (e) => {
+  if (e.target.id === 'compare') e.target.style.display = 'none';
+});
+
+/* ================= 启动 ================= */
+setView('orig');
+addEventListener('resize', () => {
+  renderer.setSize(innerWidth, innerHeight);
+  updateCam();
+});
+(function loop() {
   requestAnimationFrame(loop);
-  const now=performance.now(), dt=now-ft2; ft2=now; acc+=dt; cnt++;
-  if(acc>=500){ fpsEl.textContent=Math.round(1000/(acc/cnt)); acc=0; cnt=0; }
   controls.update();
-  ringObj.rotation.y += 0.0025;
   renderer.render(scene, camera);
 })();
-
-// ===== 统计 =====
-const k = {};
-for(const b of B) k[b.kind] = (k[b.kind]||0)+1;
-document.getElementById('s_b').textContent = B.length;
-document.getElementById('n_b').textContent = B.length;
-document.getElementById('s_pv').textContent = (k['factory-pv']||0)+' 栋';
-document.getElementById('s_tall').textContent = ((k['tower']||0)+(k['office-blue-tall']||0))+' 栋';
-document.getElementById('s_rd').textContent = (k['round']||0)+' 栋';
-document.getElementById('s_off').textContent = ((k['office']||0)+(k['office-blue']||0)+(k['office-blue-tall']||0)+(k['arc-office']||0))+' 栋';
-document.getElementById('s_sub').textContent = (k['substation']||0)+' 栋';
-document.getElementById('s_w').textContent = Math.round(PW)+' m';
-document.getElementById('s_d').textContent = Math.round(PD)+' m';
-
-document.getElementById('loader').classList.add('hide');
 </script>
 </body>
 </html>
