@@ -3,107 +3,60 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NYDemo01 · Hello World</title>
-  <style>
-    :root {
-      color-scheme: light dark;
-      --bg: #0b1220;
-      --card: #121a2b;
-      --ink: #e8eefc;
-      --muted: #9db0d0;
-      --accent: #5b8cff;
-      --ok: #3ecf8e;
+  <title>上海闵行航天城 · 3D 数字孪生</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
     }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      background:
-        radial-gradient(1200px 600px at 20% -10%, #1a2a55 0%, transparent 55%),
-        radial-gradient(900px 500px at 100% 100%, #0f3d35 0%, transparent 50%),
-        var(--bg);
-      color: var(--ink);
-    }
-    .card {
-      width: min(560px, calc(100vw - 32px));
-      padding: 36px 32px 28px;
-      border-radius: 18px;
-      background: color-mix(in srgb, var(--card) 92%, white 8%);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-    }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      letter-spacing: 0.04em;
-      color: var(--ok);
-      background: rgba(62, 207, 142, 0.12);
-      border: 1px solid rgba(62, 207, 142, 0.28);
-    }
-    .badge::before {
-      content: "";
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--ok);
-      box-shadow: 0 0 0 4px rgba(62, 207, 142, 0.15);
-    }
-    h1 {
-      margin: 18px 0 8px;
-      font-size: clamp(2rem, 5vw, 2.6rem);
-      line-height: 1.15;
-      letter-spacing: -0.02em;
-    }
-    h1 span { color: var(--accent); }
-    p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 1rem;
-      line-height: 1.6;
-    }
-    .meta {
-      margin-top: 24px;
-      padding-top: 18px;
-      border-top: 1px dashed rgba(255, 255, 255, 0.12);
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    code {
-      font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-      color: #c9d7ff;
-      background: rgba(91, 140, 255, 0.12);
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-  </style>
+  }
+  </script>
 </head>
 <body>
-  <main class="card">
-    <div class="badge">GitHub Pages · Live</div>
-    <h1>Hello, <span>World!</span></h1>
-    <p>
-      这是部署在 <code>peterinblue/NYDemo01</code> 上的测试页面。
-      GitHub Pages 已成功上线。
-    </p>
-    <div class="meta">
-      <span>Repo: <code>NYDemo01</code></span>
-      <span id="time">—</span>
-    </div>
-  </main>
-  <script>
-    document.getElementById("time").textContent =
-      "Deployed " + new Date().toLocaleString();
-  </script>
+  <div id="app">
+    <canvas id="c"></canvas>
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div>
+          <div class="brand-title">上海闵行航天城</div>
+          <div class="brand-sub">3D Digital Twin · NYDemo01</div>
+        </div>
+      </div>
+      <nav class="views" id="views">
+        <button data-view="overview" class="active">总览</button>
+        <button data-view="west">西区</button>
+        <button data-view="axis">中轴</button>
+        <button data-view="east">东区</button>
+        <button data-view="sports">体育</button>
+        <button id="btn-orbit" class="ghost">自动环绕</button>
+      </nav>
+    </header>
+
+    <aside class="panel" id="panel">
+      <div class="panel-kicker">POI 信息</div>
+      <h2 id="panel-title">航天城总览</h2>
+      <p id="panel-desc">拖拽旋转、滚轮缩放、右键平移。点击建筑或编号点位查看详情。</p>
+      <div class="panel-meta" id="panel-meta">
+        <div><span>风格</span><b>2.5D 大屏还原</b></div>
+        <div><span>范围</span><b>西门 → 东产业区</b></div>
+        <div><span>交互</span><b>Orbit + 信息卡</b></div>
+      </div>
+      <div class="legend">
+        <div><i class="sw solar"></i>光伏 A/B/C</div>
+        <div><i class="sw tower"></i>地标高塔</div>
+        <div><i class="sw power"></i>10KV / 35KV</div>
+        <div><i class="sw sport"></i>体育设施</div>
+        <div><i class="sw poi"></i>编号点位</div>
+      </div>
+    </aside>
+
+    <div class="hint" id="hint">正在加载园区模型…</div>
+  </div>
+
+  <script type="module" src="./main.js"></script>
 </body>
 </html>
