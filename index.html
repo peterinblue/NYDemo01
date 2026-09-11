@@ -168,17 +168,13 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xe9edf0);
+scene.background = new THREE.Color(0xc8d8e8);
+scene.fog = new THREE.Fog(0xc8d8e8, 400, 900);
 
 /* 世界组：施加斜切 X' = X + KZ*Z，使正交相机投影与原图 2.5D 完全一致 */
 const world = new THREE.Group();
 scene.add(world);
-world.applyMatrix4(new THREE.Matrix4().set(
-  1, 0, META.KZ, 0,
-  0, 1, 0, 0,
-  0, 0, 1, 0,
-  0, 0, 0, 1
-));
+// 游戏地图风格：不使用剪切矩阵，保持标准3D坐标
 
 /* 相机（正交） */
 let frustum = 150;
@@ -201,31 +197,30 @@ const TARGET0 = new THREE.Vector3(0, 0, 0);
 function setView(name) {
   document.querySelectorAll('.vbtn[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === name));
   controls.autoRotate = false;
-  if (name === 'orig') {
-    /* 与原图相同的投影方向：screen-right=+X, screen-up=(0,3.1,-4) 归一 */
-    const u = new THREE.Vector3(0, 3.1, -4).normalize();
-    const zc = new THREE.Vector3(1, 0, 0).cross(u); // 相机位于 +zc 方向
-    camera.position.copy(TARGET0).addScaledVector(zc, 900);
-    camera.up.copy(u);
-    controls.target.copy(TARGET0);
-    frustum = 132;
-  } else if (name === 'top') {
-    camera.position.set(0, 800, 0.01);
-    camera.up.set(0, 0, -1);
+  
+  if (name === 'game') {
+    // 游戏地图经典45度俯视斜角视角
+    camera.position.set(300, 280, 300);
+    camera.lookAt(0, 0, 0);
     controls.target.set(0, 0, 0);
-    frustum = 135;
-  } else if (name === 'low') {
-    const u = new THREE.Vector3(0, 1, -0.55).normalize();
-    const zc = new THREE.Vector3(1, 0, 0).cross(u).normalize();
-    camera.position.copy(TARGET0).addScaledVector(zc, 700);
-    camera.up.copy(u);
-    controls.target.copy(TARGET0);
-    frustum = 100;
+  } else if (name === 'orbit') {
+    // 轨道环绕视角
+    const t = Date.now() * 0.0003;
+    camera.position.set(Math.cos(t)*350, 220, Math.sin(t)*350);
+    camera.lookAt(0, 0, 0);
+    controls.target.set(0, 0, 0);
+  } else if (name === 'fly') {
+    // 飞行穿越视角（低空）
+    camera.position.set(0, 60, 180);
+    camera.lookAt(0, 0, 0);
+    controls.target.set(0, 0, 0);
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.5;
+    controls.autoRotateSpeed = 0.2;
   }
-  camera.lookAt(controls.target);
-  updateCam();
+  
+  if (camera instanceof THREE.PerspectiveCamera) {
+    camera.updateProjectionMatrix();
+  }
 }
 document.querySelectorAll('.vbtn[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 
@@ -488,7 +483,7 @@ document.getElementById('compare').addEventListener('click', (e) => {
 });
 
 /* ================= 启动 ================= */
-setView('orig');
+setView('game');
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
   updateCam();
