@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>上海闵行航天城 · 3D 园区（3D游戏地图）</title>
+<title>上海闵行航天城 · 3D 园区（1:1 还原 2.5D 原图）</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; overflow: hidden; background: #e9edf0; }
@@ -105,7 +105,7 @@
   <div class="brand">
     <div class="logo">航</div>
     <div>
-      <h1>航天城 3D 游戏地图 · 3D游戏地图</h1>
+      <h1>上海闵行航天城 3D · 1:1 还原 2.5D 原图</h1>
       <small>航能E联 · 数智能源管理平台 · 园区态势</small>
     </div>
   </div>
@@ -168,21 +168,15 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xc8d8e8);
-scene.fog = new THREE.Fog(0xc8d8e8, 400, 900);
+scene.background = new THREE.Color(0xe9edf0);
 
-/* 世界组：施加斜切 X' = X + KZ*Z，使正交相机投影与原图 2.5D 完全一致 */
-const world = new THREE.Group();
-scene.add(world);
-// 游戏地图风格：不使用剪切矩阵，保持标准3D坐标
+/* 3D 游戏视角模式：不做剪切变换，直接用透视相机 */
+scene.add(new THREE.Group());
 
-/* 相机（正交） */
-let frustum = 150;
-const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.5, 5000);
+/* 透视相机（3D 游戏视角） */
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 1, 5000);
 function updateCam() {
-  const a = innerWidth / innerHeight;
-  camera.left = -frustum * a; camera.right = frustum * a;
-  camera.top = frustum; camera.bottom = -frustum;
+  camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
 }
 updateCam();
@@ -197,30 +191,36 @@ const TARGET0 = new THREE.Vector3(0, 0, 0);
 function setView(name) {
   document.querySelectorAll('.vbtn[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === name));
   controls.autoRotate = false;
-  
   if (name === 'game') {
-    // 游戏地图经典45度俯视斜角视角
-    camera.position.set(300, 280, 300);
-    camera.lookAt(0, 0, 0);
+    /* 45度斜视游戏地图视角 */
+    camera.position.set(350, 280, 350);
+    camera.up.set(0, 1, 0);
+    controls.target.set(0, 20, 0);
+  } else if (name === 'orig') {
+    /* 与原图相同的投影方向：screen-right=+X, screen-up=(0,3.1,-4) 归一 */
+    const u = new THREE.Vector3(0, 3.1, -4).normalize();
+    const zc = new THREE.Vector3(1, 0, 0).cross(u); // 相机位于 +zc 方向
+    camera.position.copy(TARGET0).addScaledVector(zc, 900);
+    camera.up.copy(u);
+    controls.target.copy(TARGET0);
+    frustum = 132;
+  } else if (name === 'top') {
+    camera.position.set(0, 800, 0.01);
+    camera.up.set(0, 0, -1);
     controls.target.set(0, 0, 0);
-  } else if (name === 'orbit') {
-    // 轨道环绕视角
-    const t = Date.now() * 0.0003;
-    camera.position.set(Math.cos(t)*350, 220, Math.sin(t)*350);
-    camera.lookAt(0, 0, 0);
-    controls.target.set(0, 0, 0);
-  } else if (name === 'fly') {
-    // 飞行穿越视角（低空）
-    camera.position.set(0, 60, 180);
-    camera.lookAt(0, 0, 0);
-    controls.target.set(0, 0, 0);
+    frustum = 135;
+  } else if (name === 'low') {
+    const u = new THREE.Vector3(0, 1, -0.55).normalize();
+    const zc = new THREE.Vector3(1, 0, 0).cross(u).normalize();
+    camera.position.copy(TARGET0).addScaledVector(zc, 700);
+    camera.up.copy(u);
+    controls.target.copy(TARGET0);
+    frustum = 100;
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.2;
+    controls.autoRotateSpeed = 0.5;
   }
-  
-  if (camera instanceof THREE.PerspectiveCamera) {
-    camera.updateProjectionMatrix();
-  }
+  camera.lookAt(controls.target);
+  updateCam();
 }
 document.querySelectorAll('.vbtn[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 
